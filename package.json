@@ -19,6 +19,7 @@
 	"scripts": {
 		"dev": "bun run --watch src/index.ts",
 		"register": "bun run register.ts",
+		"register-global": "bun run register.ts -- global",
 		"fmt": "prettier ./src --write",
 		"check-fmt": "prettier ./src --check"
 	},
