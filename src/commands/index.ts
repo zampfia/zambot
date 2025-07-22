@@ -6,6 +6,9 @@ import type {
 
 import * as ping from "./util/ping";
 import * as testDm from "./util/test-dm";
+import * as join from "./voice/join";
+import * as leave from "./voice/leave";
+import * as play from "./voice/play";
 
 export const commands: Record<
   string,
@@ -13,4 +16,10 @@ export const commands: Record<
     data: SlashCommandBuilder | SlashCommandOptionsOnlyBuilder;
     execute: (interaction: ChatInputCommandInteraction) => Promise<any>;
   }
-> = { ping, "test-dm": testDm };
+> = {
+  ping,
+  "test-dm": testDm,
+  join,
+  leave,
+  play,
+};
