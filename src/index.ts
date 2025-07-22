@@ -4,7 +4,9 @@ import { Client, Events, GatewayIntentBits } from "discord.js";
 import { commands } from "./commands";
 import { logger } from "./logger";
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],
+});
 
 client.once(Events.ClientReady, (client) => {
   logger.info(`Logged in as ${chalk.cyanBright(client.user.tag)}`);
