@@ -22,7 +22,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   if (!queue || queue.length === 0) {
     return interaction.editReply("empty queue");
   }
-  const fields: APIEmbedField[] = queue.map((val, i) => {
+  const fields: APIEmbedField[] = queue.slice(0, 10).map((val, i) => {
     return {
       name: `${i + 1}. ${val.data.name}`,
       value: `requested by ${userMention(val.requester)}`,
