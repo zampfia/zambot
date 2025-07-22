@@ -3,7 +3,7 @@ import Keyv from "keyv";
 import type { Song } from "./voice";
 
 type ServerConfig = {
-  playing: boolean;
+  playing: Song | false;
   queue: Song[];
 };
 
