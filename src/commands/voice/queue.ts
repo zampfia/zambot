@@ -18,7 +18,10 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   const server = await kv.get(interaction.guildId!);
-  const queue = server?.queue!;
+  const queue = server?.queue;
+  if (!queue || queue.length === 0) {
+    return interaction.editReply("empty queue");
+  }
   const fields: APIEmbedField[] = queue.map((val, i) => {
     return {
       name: `${i + 1}. ${val.data.name}`,
