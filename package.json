@@ -27,6 +27,7 @@
 		"chalk": "^5.4.1",
 		"discord.js": "^14.21.0",
 		"get-audio-duration": "^4.0.1",
+		"keyv": "^5.4.0",
 		"libsodium-wrappers": "^0.7.15",
 		"winston": "^3.17.0"
 	}
