@@ -17,6 +17,9 @@ import {
 } from "discord.js";
 import getAudioDurationInSeconds from "get-audio-duration";
 
+import { kv } from "@/db";
+import { playNext } from "@/voice";
+
 export const data = new SlashCommandBuilder()
   .setName("play")
   .setDescription("play bot sound")
@@ -44,6 +47,12 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   if (!(await file.exists())) {
     return interaction.editReply("sound not found");
   }
+  const fromDb = await kv.get(interaction.guildId!);
+  if (fromDb?.playing) {
+    const queue = [...fromDb.queue, filePath];
+    await kv.set(interaction.guildId!, { playing: true, queue });
+    return interaction.editReply("added in queue");
+  }
   const resource = createAudioResource(Readable.from(file.stream()));
   const player = createAudioPlayer({
     behaviors: {
@@ -53,8 +62,12 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   player.play(resource);
   const subscription = connection.subscribe(player);
   if (subscription) {
+    await kv.set(interaction.guildId!, { playing: true, queue: [] });
     setTimeout(
-      () => subscription.unsubscribe(),
+      () => {
+        subscription.unsubscribe();
+        setTimeout(() => playNext(interaction.guildId!), 1_500);
+      },
       (await getAudioDurationInSeconds(filePath)) * 1000,
     );
   }
