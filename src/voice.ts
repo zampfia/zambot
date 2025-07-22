@@ -1,7 +1,10 @@
 import { Readable } from "stream";
 
 import {
+  AudioPlayerStatus,
+  AudioResource,
   NoSubscriberBehavior,
+  PlayerSubscription,
   createAudioPlayer,
   createAudioResource,
   getVoiceConnection,
@@ -39,13 +42,42 @@ export async function playNext(guildId: string) {
   }
 }
 
+export async function nextIfNotPaused(
+  guildId: string,
+  subscription: PlayerSubscription,
+) {
+  if (subscription.player.state.status !== AudioPlayerStatus.Playing) {
+    setTimeout(() => nextIfNotPaused(guildId, subscription), 1_000);
+  } else {
+    const resource = subscription.player.state.resource as AudioResource<{
+      duration: number;
+    }>;
+    if (resource.playbackDuration >= resource.metadata.duration) {
+      subscription.unsubscribe();
+      setTimeout(() => playNext(guildId), 1_500);
+    } else {
+      setTimeout(() => {
+        nextIfNotPaused(guildId, subscription);
+      }, resource.metadata.duration - resource.playbackDuration);
+    }
+  }
+}
+
 async function playSound(guildId: string, sound: Song<"sound">) {
   const file = Bun.file(sound.data.filePath);
   if (!(await file.exists())) {
     return playNext(guildId);
   }
   const connection = getVoiceConnection(guildId);
-  const resource = createAudioResource(Readable.from(file.stream()));
+  const resource = createAudioResource<{ duration: number }>(
+    Readable.from(file.stream()),
+    {
+      metadata: {
+        duration:
+          (await getAudioDurationInSeconds(sound.data.filePath)) * 1_000,
+      },
+    },
+  );
   const player = createAudioPlayer({
     behaviors: {
       noSubscriber: NoSubscriberBehavior.Pause,
@@ -54,12 +86,8 @@ async function playSound(guildId: string, sound: Song<"sound">) {
   player.play(resource);
   const subscription = connection?.subscribe(player);
   if (subscription) {
-    setTimeout(
-      () => {
-        subscription.unsubscribe();
-        setTimeout(() => playNext(guildId), 1_500);
-      },
-      (await getAudioDurationInSeconds(sound.data.filePath)) * 1000,
-    );
+    setTimeout(() => {
+      nextIfNotPaused(guildId, subscription);
+    }, resource.metadata.duration);
   }
 }

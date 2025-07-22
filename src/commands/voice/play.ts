@@ -18,7 +18,7 @@ import {
 import getAudioDurationInSeconds from "get-audio-duration";
 
 import { kv } from "@/db";
-import { type Song, playNext } from "@/voice";
+import { type Song, nextIfNotPaused } from "@/voice";
 
 export const data = new SlashCommandBuilder()
   .setName("play")
@@ -48,22 +48,27 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     return interaction.editReply("sound not found");
   }
   const fromDb = await kv.get(interaction.guildId!);
+  const song: Song<"sound"> = {
+    source: "sound",
+    requester: interaction.user.id,
+    data: {
+      filePath,
+      name: sound,
+    },
+  };
   if (fromDb?.playing) {
-    const queue: Song[] = [
-      ...fromDb.queue,
-      {
-        source: "sound",
-        requester: interaction.user.id,
-        data: {
-          filePath,
-          name: sound,
-        },
-      },
-    ];
-    await kv.set(interaction.guildId!, { playing: true, queue });
+    const queue: Song[] = [...fromDb.queue, song];
+    await kv.set(interaction.guildId!, { playing: song, queue });
     return interaction.editReply("added in queue");
   }
-  const resource = createAudioResource(Readable.from(file.stream()));
+  const resource = createAudioResource<{ duration: number }>(
+    Readable.from(file.stream()),
+    {
+      metadata: {
+        duration: (await getAudioDurationInSeconds(filePath)) * 1000,
+      },
+    },
+  );
   const player = createAudioPlayer({
     behaviors: {
       noSubscriber: NoSubscriberBehavior.Pause,
@@ -73,13 +78,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   const subscription = connection.subscribe(player);
   if (subscription) {
     await kv.set(interaction.guildId!, { playing: true, queue: [] });
-    setTimeout(
-      () => {
-        subscription.unsubscribe();
-        setTimeout(() => playNext(interaction.guildId!), 1_500);
-      },
-      (await getAudioDurationInSeconds(filePath)) * 1000,
-    );
+    setTimeout(() => {
+      nextIfNotPaused(interaction.guildId!, subscription);
+    }, resource.metadata.duration);
   }
   return interaction.editReply(`Playing ${bold(sound)}`);
 }
