@@ -9,6 +9,7 @@ import * as testDm from "./util/test-dm";
 import * as join from "./voice/join";
 import * as leave from "./voice/leave";
 import * as play from "./voice/play";
+import * as queue from "./voice/queue";
 
 export const commands: Record<
   string,
@@ -22,4 +23,5 @@ export const commands: Record<
   join,
   leave,
   play,
+  queue,
 };
