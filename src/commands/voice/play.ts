@@ -18,7 +18,7 @@ import {
 import getAudioDurationInSeconds from "get-audio-duration";
 
 import { kv } from "@/db";
-import { playNext } from "@/voice";
+import { type Song, playNext } from "@/voice";
 
 export const data = new SlashCommandBuilder()
   .setName("play")
@@ -49,7 +49,16 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   }
   const fromDb = await kv.get(interaction.guildId!);
   if (fromDb?.playing) {
-    const queue = [...fromDb.queue, filePath];
+    const queue: Song[] = [
+      ...fromDb.queue,
+      {
+        source: "sound",
+        data: {
+          filePath,
+          name: sound,
+        },
+      },
+    ];
     await kv.set(interaction.guildId!, { playing: true, queue });
     return interaction.editReply("added in queue");
   }

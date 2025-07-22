@@ -10,6 +10,20 @@ import getAudioDurationInSeconds from "get-audio-duration";
 
 import { kv } from "./db";
 
+export type SongSource = "sound";
+
+export type SongData = {
+  sound: {
+    filePath: string;
+    name: string;
+  };
+};
+
+export type Song<T extends SongSource = SongSource> = {
+  source: T;
+  data: SongData[T];
+};
+
 export async function playNext(guildId: string) {
   const fromDb = await kv.get(guildId);
   if (fromDb?.queue.length === 0) {
@@ -17,7 +31,15 @@ export async function playNext(guildId: string) {
   }
   const sound = fromDb?.queue.shift()!;
   await kv.set(guildId, { playing: true, queue: fromDb?.queue });
-  const file = Bun.file(sound);
+  switch (sound.source) {
+    case "sound":
+      playSound(guildId, sound);
+      break;
+  }
+}
+
+async function playSound(guildId: string, sound: Song<"sound">) {
+  const file = Bun.file(sound.data.filePath);
   if (!(await file.exists())) {
     return playNext(guildId);
   }
@@ -36,7 +58,7 @@ export async function playNext(guildId: string) {
         subscription.unsubscribe();
         setTimeout(() => playNext(guildId), 1_500);
       },
-      (await getAudioDurationInSeconds(sound)) * 1000,
+      (await getAudioDurationInSeconds(sound.data.filePath)) * 1000,
     );
   }
 }
