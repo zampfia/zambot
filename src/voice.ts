@@ -21,6 +21,7 @@ export type SongData = {
 
 export type Song<T extends SongSource = SongSource> = {
   source: T;
+  requester: string;
   data: SongData[T];
 };
 

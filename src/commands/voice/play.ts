@@ -53,6 +53,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       ...fromDb.queue,
       {
         source: "sound",
+        requester: interaction.user.id,
         data: {
           filePath,
           name: sound,
